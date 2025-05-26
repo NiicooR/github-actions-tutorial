@@ -1,0 +1,155 @@
+# Mi primer GitHub Action
+name: Hello World Tutorial
+
+# Cuándo se ejecuta este workflow
+on:
+  # Se ejecuta cuando haces push a la rama main
+  push:
+    branches: [ main ]
+  
+  # Se ejecuta cuando abres o actualizas un Pull Request
+  pull_request:
+    branches: [ main ]
+    
+  # Te permite ejecutarlo manualmente desde la interfaz web
+  workflow_dispatch:
+
+# Los trabajos que se van a ejecutar
+jobs:
+  # Primer trabajo: saludo básico
+  hello-job:
+    # Sistema operativo: Ubuntu (gratis)
+    runs-on: ubuntu-latest
+    
+    # Lista de pasos
+    steps:
+      # Paso 1: Descargar el código del repositorio
+      - name: 📥 Checkout del código
+        uses: actions/checkout@v4
+      
+      # Paso 2: Saludo básico
+      - name: 👋 Decir Hola
+        run: |
+          echo "¡Hola Mundo desde GitHub Actions!"
+          echo "Repositorio: ${{ github.repository }}"
+          echo "Rama: ${{ github.ref }}"
+          echo "Usuario: ${{ github.actor }}"
+          date
+      
+      # Paso 3: Información del sistema
+      - name: 🖥️ Información del Sistema
+        run: |
+          echo "=== INFORMACIÓN DEL SISTEMA ==="
+          uname -a
+          echo ""
+          echo "=== CPU INFO ==="
+          lscpu | head -10
+          echo ""
+          echo "=== MEMORIA ==="
+          free -h
+          echo ""
+          echo "=== DISCO ==="
+          df -h
+      
+      # Paso 4: Instalar Node.js
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      # Paso 5: Crear un archivo simple
+      - name: 📝 Crear archivo de saludo
+        run: |
+          mkdir -p output
+          echo "¡Hola desde GitHub Actions!" > output/saludo.txt
+          echo "Generado el: $(date)" >> output/saludo.txt
+          echo "Por: ${{ github.actor }}" >> output/saludo.txt
+          cat output/saludo.txt
+      
+      # Paso 6: Listar archivos del proyecto
+      - name: 📂 Listar archivos del proyecto
+        run: |
+          echo "=== ARCHIVOS EN EL REPOSITORIO ==="
+          ls -la
+          echo ""
+          echo "=== CONTENIDO DEL README ==="
+          if [ -f README.md ]; then
+            cat README.md
+          else
+            echo "No hay README.md"
+          fi
+
+  # Segundo trabajo: trabajar con variables de entorno
+  environment-job:
+    runs-on: ubuntu-latest
+    
+    # Variables de entorno para este trabajo
+    env:
+      MI_VARIABLE: "Hola desde variable de entorno"
+      NUMERO_MAGICO: 42
+    
+    steps:
+      - name: 🔍 Variables de entorno
+        run: |
+          echo "Variable personalizada: $MI_VARIABLE"
+          echo "Número mágico: $NUMERO_MAGICO"
+          echo ""
+          echo "=== VARIABLES DE GITHUB ==="
+          echo "Repositorio: $GITHUB_REPOSITORY"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          echo "Event: $GITHUB_EVENT_NAME"
+          echo "Actor: $GITHUB_ACTOR"
+          echo "SHA: $GITHUB_SHA"
+      
+      - name: 🧮 Matemáticas básicas
+        env:
+          NUMERO_A: 10
+          NUMERO_B: 5
+        run: |
+          echo "Número A: $NUMERO_A"
+          echo "Número B: $NUMERO_B"
+          echo "Suma: $((NUMERO_A + NUMERO_B))"
+          echo "Resta: $((NUMERO_A - NUMERO_B))"
+          echo "Multiplicación: $((NUMERO_A * NUMERO_B))"
+
+  # Tercer trabajo: trabajar con condicionales
+  conditional-job:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: ✅ Solo en push a main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "¡Este paso solo se ejecuta en push a main!"
+      
+      - name: 🔀 Solo en Pull Request
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "¡Este paso solo se ejecuta en Pull Requests!"
+      
+      - name: 👤 Solo si eres tú
+        if: github.actor == github.repository_owner
+        run: |
+          echo "¡Hola propietario del repositorio!"
+      
+      - name: 🌅 Solo por las mañanas (UTC)
+        run: |
+          HOUR=$(date +%H)
+          echo "Hora actual: $HOUR"
+          if [ $HOUR -lt 12 ]; then
+            echo "¡Buenos días!"
+          else
+            echo "¡Buenas tardes/noches!"
+          fi
+
+  # Cuarto trabajo: dependencias entre trabajos
+  final-job:
+    # Este trabajo espera a que terminen los otros
+    needs: [hello-job, environment-job, conditional-job]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🎉 Trabajo Final
+        run: |
+          echo "¡Todos los trabajos anteriores han terminado exitosamente!"
+          echo "Este es el trabajo final 🚀"
